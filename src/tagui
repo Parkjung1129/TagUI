@@ -4,6 +4,9 @@
 # configure command to launch chrome for Linux (configuration for macOS not required as path is fixed)
 chrome_command="google-chrome"
 
+# configure tagui download Git Branch
+git_branch="feature/docker_ver"
+
 if [ -z "$1" ]
 then
 echo "tagui v6.95: use following options and this syntax to run - ./tagui flow_filename option(s)"
@@ -42,7 +45,8 @@ TAGUI_PARENT_DIR="$( cd -P "$( dirname "$SOURCE" )/.." && pwd )"
 if [ -f "$TAGUI_PARENT_DIR/TagUI-master.zip" ]; then rm "$TAGUI_PARENT_DIR/TagUI-master.zip"; fi
 if [ -f "$TAGUI_PARENT_DIR/src/tagui_master" ]; then rm "$TAGUI_PARENT_DIR/src/tagui_master"; fi
 
-curl -k -s -o "$TAGUI_PARENT_DIR/src/tagui_master" "https://raw.githubusercontent.com/kelaberetiv/TagUI/master/src/tagui"
+#curl -k -s -o "$TAGUI_PARENT_DIR/src/tagui_master" "https://raw.githubusercontent.com/kelaberetiv/TagUI/master/src/tagui"
+curl -k -s -o "$TAGUI_PARENT_DIR/src/tagui_master" "https://raw.githubusercontent.com/Parkjung1129/TagUI/$git_branch/src/tagui"
 if [ -f "$TAGUI_PARENT_DIR/src/tagui_master" ]; then
 if ! grep -iq 'echo "tagui v' "$TAGUI_PARENT_DIR/src/tagui_master"; then
 rm "$TAGUI_PARENT_DIR/src/tagui_master"; fi; fi
@@ -56,12 +60,12 @@ if [[ "$TAGUI_MASTER_VERSION" == "$TAGUI_LOCAL_VERSION" ]]; then
 echo "You are already using the latest version of TagUI (${TAGUI_LOCAL_VERSION%?})"; exit 0; fi
 
 echo "Downloading and updating to latest version of TagUI (${TAGUI_MASTER_VERSION%?})"
-curl -k -s -L -o "$TAGUI_PARENT_DIR/TagUI-master.zip" "https://github.com/kelaberetiv/TagUI/archive/refs/heads/master.zip"
+curl -k -s -L -o "$TAGUI_PARENT_DIR/TagUI-master.zip" "https://github.com/Parkjung1129/TagUI/archive/refs/heads/master.zip"
 if [ -f "$TAGUI_PARENT_DIR/TagUI-master.zip" ]; then
 if grep -iq "not found\|bad request" "$TAGUI_PARENT_DIR/TagUI-master.zip"; then
 rm "$TAGUI_PARENT_DIR/TagUI-master.zip"; fi; fi
 if ! [ -f "$TAGUI_PARENT_DIR/TagUI-master.zip" ]; then
-echo "ERROR - cannot download from https://github.com/kelaberetiv/TagUI/archive/refs/heads/master.zip"; exit 1; fi
+echo "ERROR - cannot download from https://github.com/Parkjung1129/TagUI/archive/refs/heads/master.zip"; exit 1; fi
 
 unzip -qq "$TAGUI_PARENT_DIR/TagUI-master.zip" -d "$TAGUI_PARENT_DIR"; \cp -R "$TAGUI_PARENT_DIR/TagUI-master/src" "$TAGUI_PARENT_DIR/."; \cp -R "$TAGUI_PARENT_DIR/TagUI-master/flows" "$TAGUI_PARENT_DIR/."; \cp -R "$TAGUI_PARENT_DIR/TagUI-master/docs" "$TAGUI_PARENT_DIR/."; \cp "$TAGUI_PARENT_DIR/TagUI-master/README.md" "$TAGUI_PARENT_DIR/."; \cp "$TAGUI_PARENT_DIR/TagUI-master/LICENSE.md" "$TAGUI_PARENT_DIR/."; chmod -R 755 "$TAGUI_PARENT_DIR"; if [ -d "$TAGUI_PARENT_DIR/TagUI-master" ]; then \rm -R "$TAGUI_PARENT_DIR/TagUI-master"; echo "TagUI successfully updated at $TAGUI_PARENT_DIR"; fi; exit 0
 
@@ -279,7 +283,7 @@ if [ -f "tagui_py/tagui_py.out" ]; then rm tagui_py/tagui_py.out; fi
 if [ -f "tagui.sikuli/tagui_sikuli.in" ]; then rm tagui.sikuli/tagui_sikuli.in; fi
 if [ -f "tagui.sikuli/tagui_sikuli.out" ]; then rm tagui.sikuli/tagui_sikuli.out; fi
 
-# delete chrome / headless chrome integration files if they exist 
+# delete chrome / headless chrome integration files if they exist
 if [ -f "tagui_chrome.in" ]; then rm tagui_chrome.in; fi
 if [ -f "tagui_chrome.out" ]; then rm tagui_chrome.out; fi
 
@@ -317,7 +321,7 @@ min_column=`head -n 1 "$custom_csv_file" | awk -F',' '{print NF}'`
 if [ "$min_column" -lt 2 ]; then echo "ERROR - $custom_csv_file has lesser than 2 columns" | tee -a "$1".log
 else tagui_data_set_size="$(($min_column-1))"; fi; fi
 
-# big loop for managing multiple data sets in datatable 
+# big loop for managing multiple data sets in datatable
 for (( tagui_data_set=1; tagui_data_set<=$tagui_data_set_size; tagui_data_set++ ))
 do export tagui_data_set=$tagui_data_set
 
@@ -344,7 +348,7 @@ fi
 if [ -f "tagui.sikuli/tagui_sikuli.in" ]; then
 # start dummy first run to let sikulix integrate jython
 if [ -f "sikulix/jython-standalone-2.7.1.jar" ]; then
-java -jar sikulix/sikulix.jar -h > /dev/null 2>&1 
+java -jar sikulix/sikulix.jar -h > /dev/null 2>&1
 fi
 java -jar sikulix/sikulix.jar -r tagui.sikuli -d 3 >> tagui.sikuli/tagui.log 2>&1 &
 fi
@@ -359,7 +363,8 @@ width="$(grep width tagui_config.txt | cut -d' ' -f 2)"; height="$(grep height t
 if [ "$tagui_web_browser" == "chrome" ]; then height="$(($height + 74))"; fi; window_size="--window-size=$width$height"
 
 # setting to run chrome in headless mode if headless option is used
-headless_switch=""; if [ "$tagui_web_browser" == "headless" ]; then headless_switch="--headless --disable-gpu"; fi
+# add option -no-sandbox
+headless_switch=""; if [ "$tagui_web_browser" == "headless" ]; then headless_switch="--headless --disable-gpu --no-sandbox "; fi
 
 # skip restarting chrome in speed mode and resuse 1st websocket url
 if [ "$tagui_data_set" -eq 1 ] || [ "$tagui_speed_mode" == false ]; then
